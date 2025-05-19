@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <!-- Podstawowe ustawienia strony -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="1-fc042bca.ico">
+    <title>Saper | Gra logiczna</title>
+    
+    <!-- Ładujemy fajne czcionki z internetu -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Tutaj są kolory dla normalnego trybu (jasnego) */
+        :root {
+            --primary-color: #4a6fa5;       /* Niebieski kolor guzików */
+            --secondary-color: #166088;     /* Ciemniejszy niebieski */
+            --accent-color: #4fc3f7;        /* Jasny niebieski */
+            --text-color: #333;             /* Kolor tekstu - prawie czarny */
+            --bg-color: #f5f5f5;           /* Kolor tła strony */
+            --panel-bg: #e8e8e8;            /* Kolor panelu gry */
+            --border-color: #ccc;           /* Kolor obramowań */
+            --success-color: #4caf50;       /* Zielony kolor sukcesu */
+            --danger-color: #f44336;        /* Czerwony kolor przegranej */
+            --warning-color: #ff9800;       /* Pomarańczowy kolor ostrzeżenia */
+            --flag-color: #ffeb3b;          /* Żółty kolor flagi */
+            --mine-color: #d32f2f;          /* Czerwony kolor miny */
+        }
+
+        /* Kolory dla ciemnego trybu */
+        .dark-mode {
+            --primary-color: #3a5683;
+            --secondary-color: #0d4b6e;
+            --accent-color: #0288d1;
+            --text-color: #e0e0e0;          /* Jasny tekst */
+            --bg-color: #121212;            /* Ciemne tło */
+            --panel-bg: #1e1e1e;            /* Ciemny panel */
+            --border-color: #444;            /* Ciemna ramka */
+            --success-color: #81c784;        /* Jasna zieleń */
+            --danger-color: #e57373;         /* Jasna czerwień */
+            --warning-color: #ffb74d;        /* Jasny pomarańcz */
+            --flag-color: #fff176;           /* Jasna żółć */
+            --mine-color: #f44336;           /* Czerwony */
+        }
+
+        /* Ustawienia całej strony */
+        body {
+            font-family: 'Roboto', sans-serif;  /* Czcionka tekstu */
+            text-align: center;                /* Wszystko na środku */
+            margin: 0;                         /* Bez marginesów */
+            padding: 20px;                     /* Trochę odstępu */
+            background-color: var(--bg-color);  /* Kolor tła */
+            color: var(--text-color);          /* Kolor tekstu */
+            transition: all 0.3s ease;         /* Animacja zmiany kolorów */
+        }
+
+        /* Nagłówek gry */
+        h1 {
+            font-family: 'Press Start 2P', cursive; /* Retro czcionka */
+            color: var(--primary-color);       /* Kolor tekstu */
+            margin-bottom: 20px;               /* Odstęp od dołu */
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2); /* Cień tekstu */
+            font-size: 2.2rem;                /* Duży rozmiar */
+        }
+
+        /* Główny panel gry */
+        .panel-gry {
+            margin: 20px auto;                 /* Marginesy */
+            padding: 20px;                     /* Odstęp wewnątrz */
+            background: var(--panel-bg);       /* Kolor tła */
+            width: fit-content;               /* Szerokość dopasowana */
+            border-radius: 10px;               /* Zaokrąglone rogi */
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* Cień */
+            border: 1px solid var(--border-color); /* Obramowanie */
+            max-width: 90%;                   /* Maksymalna szerokość */
+        }
+
+        /* Plansza do gry */
+        .plansza {
+            display: inline-grid;              /* Siatka pól */
+            grid-gap: 2px;                     /* Odstęp między polami */
+            background: var(--border-color);   /* Kolor tła */
+            border-radius: 5px;                /* Zaokrąglone rogi */
+            margin: 20px auto;                 /* Marginesy */
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2); /* Cień */
+        }
+
+        /* Pojedyncze pole na planszy */
+        .pole {
+            width: 30px;                       /* Szerokość pola */
+            height: 30px;                      /* Wysokość pola */
+            background: var(--panel-bg);       /* Kolor tła */
+            display: flex;                     /* Flexbox */
+            justify-content: center;           /* Na środku w poziomie */
+            align-items: center;               /* Na środku w pionie */
+            font-weight: bold;                 /* Pogrubiony tekst */
+            cursor: pointer;                   /* Kursor wskazujący */
+            border-radius: 3px;                /* Lekko zaokrąglone rogi */
+            transition: all 0.2s ease;         /* Animacja */
+            font-size: 14px;                   /* Rozmiar czcionki */
+            user-select: none;                 /* Nie można zaznaczyć */
+        }
+
+        /* Efekt po najechaniu na pole */
+        .pole:hover {
+            background: #d0d0d0;               /* Jasnoszare tło */
+        }
+
+        /* Efekt hover w ciemnym trybie */
+        .dark-mode .pole:hover {
+            background: #333;                  /* Ciemne tło */
+        }
+
+        /* Odkryte pole */
+        .odkryte {
+            background: var(--bg-color);       /* Kolor tła */
+        }
+
+        /* Pole z miną */
+        .mina {
+            background: var(--mine-color);     /* Czerwone tło */
+            color: white;                      /* Biały tekst */
+        }
+
+        /* Pole z flagą */
+        .flaga {
+            background: var(--flag-color);     /* Żółte tło */
+            color: #000;                       /* Czarny tekst */
+        }
+
+        /* Kontener z przyciskami */
+        .przyciski {
+            margin: 20px;                      /* Marginesy */
+            display: flex;                     /* Flexbox */
+            justify-content: center;           /* Na środku */
+            gap: 15px;                         /* Odstęp między przyciskami */
+            flex-wrap: wrap;                   /* Zawijanie przycisków */
+        }
+
+        /* Style przycisków */
+        button {
+            padding: 10px 20px;                /* Odstęp wewnątrz */
+            background-color: var(--primary-color); /* Kolor tła */
+            color: white;                      /* Biały tekst */
+            border: none;                      /* Bez obramowania */
+            border-radius: 5px;                /* Zaokrąglone rogi */
+            cursor: pointer;                   /* Kursor wskazujący */
+            font-size: 16px;                   /* Rozmiar czcionki */
+            transition: all 0.2s ease;         /* Animacja */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2); /* Cień */
+        }
+
+        /* Efekt po najechaniu na przycisk */
+        button:hover {
+            background-color: var(--secondary-color); /* Ciemniejsze tło */
+            transform: translateY(-2px);       /* Uniesienie przycisku */
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3); /* Większy cień */
+        }
+
+        /* Efekt kliknięcia przycisku */
+        button:active {
+            transform: translateY(0);          /* Powrót do normalnej pozycji */
+        }
+
+        /* Kontener ze statystykami */
+        .statystyki {
+            display: flex;                     /* Flexbox */
+            justify-content: center;           /* Na środku */
+            gap: 20px;                         /* Odstęp między elementami */
+            margin-bottom: 15px;               /* Margines od dołu */
+            font-size: 18px;                   /* Rozmiar czcionki */
+            flex-wrap: wrap;                   /* Zawijanie elementów */
+        }
+
+        /* Pojedyncza statystyka */
+        .statystyka {
+            background: rgba(0,0,0,0.1);       /* Półprzezroczyste tło */
+            padding: 8px 15px;                 /* Odstęp wewnątrz */
+            border-radius: 20px;               /* Bardzo zaokrąglone rogi */
+            display: flex;                     /* Flexbox */
+            align-items: center;               /* Na środku w pionie */
+            gap: 5px;                          /* Odstęp między elementami */
+        }
+
+        /* Statystyki w ciemnym trybie */
+        .dark-mode .statystyka {
+            background: rgba(255,255,255,0.1); /* Jasne półprzezroczyste tło */
+        }
+
+        /* Kontener z opcjami */
+        .opcje {
+            display: flex;                     /* Flexbox */
+            justify-content: center;           /* Na środku */
+            gap: 20px;                         /* Odstęp między opcjami */
+            margin-top: 15px;                  /* Margines od góry */
+            flex-wrap: wrap;                   /* Zawijanie elementów */
+        }
+
+        /* Opcja jako checkbox */
+        .checkbox-opcja {
+            display: flex;                     /* Flexbox */
+            align-items: center;               /* Na środku w pionie */
+            gap: 8px;                          /* Odstęp między elementami */
+            cursor: pointer;                   /* Kursor wskazujący */
+            font-family: 'Press Start 2P', cursive; /* Retro czcionka */
+            color: var(--primary-color);       /* Kolor tekstu */
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2); /* Cień tekstu */
+        }
+
+        /* Sam checkbox */
+        .checkbox-opcja input {
+            width: 18px;                       /* Szerokość */
+            height: 18px;                      /* Wysokość */
+            cursor: pointer;                   /* Kursor wskazujący */
+        }
+
+        /* Wybór poziomu trudności */
+        .wybor-poziomu {
+            margin-bottom: 20px;               /* Margines od dołu */
+            display: flex;                     /* Flexbox */
+            justify-content: center;           /* Na środku */
+            gap: 10px;                         /* Odstęp między przyciskami */
+            align-items: center;               /* Na środku w pionie */
+            flex-wrap: wrap;                   /* Zawijanie przycisków */
+        }
+
+        /* Przycisk wyboru poziomu */
+        .przycisk-poziomu {
+            background-color: var(--panel-bg); /* Kolor tła */
+            border: 2px solid var(--border-color); /* Obramowanie */
+            border-radius: 20px;               /* Bardzo zaokrąglone rogi */
+            padding: 8px 16px;                 /* Odstęp wewnątrz */
+            font-size: 14px;                   /* Rozmiar czcionki */
+            cursor: pointer;                   /* Kursor wskazujący */
+            transition: all 0.2s ease;         /* Animacja */
+            display: flex;                     /* Flexbox */
+            align-items: center;               /* Na środku w pionie */
+            gap: 8px;                          /* Odstęp między elementami */
+        }
+
+        /* Efekt po najechaniu na przycisk poziomu */
+        .przycisk-poziomu:hover {
+            background-color: var(--accent-color); /* Kolor akcentu */
+            color: white;                      /* Biały tekst */
+            border-color: var(--accent-color); /* Kolor obramowania */
+            transform: scale(1.05);            /* Lekkie powiększenie */
+        }
+
+        /* Aktywny przycisk poziomu */
+        .przycisk-poziomu.aktywny {
+            background-color: var(--success-color); /* Zielone tło */
+            color: white;                      /* Biały tekst */
+            border-color: var(--success-color); /* Zielone obramowanie */
+        }
+
+        /* Ostrzeżenie o czasie */
+        .czas-ostrzeganie {
+            color: var(--warning-color);       /* Pomarańczowy kolor */
+            font-weight: bold;                 /* Pogrubienie */
+        }
+        
+        /* Krytyczny czas */
+        .czas-krytyczny {
+            color: var(--danger-color);        /* Czerwony kolor */
+            font-weight: bold;                 /* Pogrubienie */
+            animation: pulse 0.5s infinite alternate; /* Animacja pulsowania */
+        }
+        
+        /* Animacja pulsowania */
+        @keyframes pulse {
+            from { opacity: 1; }               /* Pełna widoczność */
+            to { opacity: 0.7; }               /* Mniejsza widoczność */
+        }
+
+        /* Okno modalne (wynik gry) */
+        .modal {
+            display: none;                     /* Na początku ukryte */
+            position: fixed;                   /* Stała pozycja */
+            top: 0;                           /* Od góry */
+            left: 0;                          /* Od lewej */
+            width: 100%;                      /* Cała szerokość */
+            height: 100%;                      /* Cała wysokość */
+            background-color: rgba(0,0,0,0.7); /* Półprzezroczyste tło */
+            z-index: 100;                      /* Na wierzchu */
+            justify-content: center;           /* Na środku w poziomie */
+            align-items: center;               /* Na środku w pionie */
+        }
+
+        /* Zawartość modala */
+        .modal-content {
+            background-color: var(--panel-bg); /* Kolor tła */
+            padding: 30px;                     /* Odstęp wewnątrz */
+            border-radius: 10px;               /* Zaokrąglone rogi */
+            max-width: 400px;                  /* Maksymalna szerokość */
+            width: 90%;                        /* Procentowa szerokość */
+            text-align: center;                /* Tekst na środku */
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3); /* Cień */
+            animation: modalFadeIn 0.3s ease;  /* Animacja pojawiania */
+        }
+
+        /* Animacja pojawiania się modala */
+        @keyframes modalFadeIn {
+            from { 
+                opacity: 0;                    /* Niewidoczny */
+                transform: translateY(-20px);  /* Przesunięty do góry */
+            }
+            to { 
+                opacity: 1;                    /* Widoczny */
+                transform: translateY(0);      /* Normalna pozycja */
+            }
+        }
+
+        /* Nagłówek modala */
+        .modal h2 {
+            margin-top: 0;                     /* Brak marginesu od góry */
+            color: var(--primary-color);       /* Kolor tekstu */
+            font-size: 24px;                   /* Rozmiar czcionki */
+        }
+
+        /* Tekst w modalu */
+        .modal p {
+            font-size: 18px;                   /* Rozmiar czcionki */
+            margin-bottom: 25px;               /* Margines od dołu */
+        }
+
+        /* Przyciski w modalu */
+        .modal-buttons {
+            display: flex;                     /* Flexbox */
+            justify-content: center;           /* Na środku */
+            gap: 15px;                         /* Odstęp między przyciskami */
+        }
+
+        /* Przycisk w modalu */
+        .modal-btn {
+            padding: 10px 20px;                /* Odstęp wewnątrz */
+            border-radius: 5px;                /* Zaokrąglone rogi */
+            font-weight: bold;                 /* Pogrubienie */
+            cursor: pointer;                   /* Kursor wskazujący */
+            transition: all 0.2s ease;         /* Animacja */
+        }
+
+        /* Główny przycisk w modalu */
+        .modal-btn-primary {
+            background-color: var(--primary-color); /* Kolor tła */
+            color: white;                      /* Biały tekst */
+            border: none;                      /* Bez obramowania */
+        }
+
+        /* Efekt po najechaniu na główny przycisk */
+        .modal-btn-primary:hover {
+            background-color: var(--secondary-color); /* Ciemniejsze tło */
+        }
+
+        /* Drugi przycisk w modalu */
+        .modal-btn-secondary {
+            background-color: transparent;     /* Przezroczyste tło */
+            border: 2px solid var(--border-color); /* Obramowanie */
+            color: var(--text-color);         /* Kolor tekstu */
+        }
+
+        /* Efekt po najechaniu na drugi przycisk */
+        .modal-btn-secondary:hover {
+            border-color: var(--primary-color); /* Kolor obramowania */
+        }
+
+        /* Emotka wyniku */
+        .emoji-wynik {
+            font-size: 50px;                   /* Duży rozmiar */
+            margin-bottom: 15px;               /* Margines od dołu */
+            display: block;                    /* Element blokowy */
+        }
+
+        /* Klasa dla wygranej */
+        .win {
+            color: var(--success-color);       /* Zielony kolor */
+        }
+
+        /* Klasa dla przegranej */
+        .lose {
+            color: var(--danger-color);        /* Czerwony kolor */
+        }
+
+        /* Kolory dla liczb na polach (1-8) */
+        .liczba-1 { color: #1976d2; }          /* Niebieski */
+        .liczba-2 { color: #388e3c; }         /* Zielony */
+        .liczba-3 { color: #d32f2f; }         /* Czerwony */
+        .liczba-4 { color: #7b1fa2; }         /* Fioletowy */
+        .liczba-5 { color: #ff8f00; }         /* Pomarańczowy */
+        .liczba-6 { color: #0097a7; }         /* Turkusowy */
+        .liczba-7 { color: #5d4037; }         /* Brązowy */
+        .liczba-8 { color: #455a64; }         /* Szaroniebieski */
+
+        /* Ukryty select do wyboru poziomu */
+        #poziom {
+            position: absolute;                /* Absolutna pozycja */
+            opacity: 0;                        /* Niewidoczny */
+            height: 0;                         /* Brak wysokości */
+            width: 0;                          /* Brak szerokości */
+            overflow: hidden;                  /* Ukrycie zawartości */
+            pointer-events: none;              /* Brak interakcji */
+        }
+
+        /* Style dla limitu flag */
+        .limit-flag {
+            color: var(--danger-color);        /* Czerwony kolor */
+            font-weight: bold;                 /* Pogrubienie */
+        }
+
+        .programisci{
+            font-family: 'Press Start 2P', cursive; /*czcionka*/
+             color: var(--primary-color);       /* Kolor tekstu */
+             text-shadow: 2px 2px 4px rgba(0,0,0,0.2); /* Cień tekstu */
+        }
+    </style>
+</head>
+<!-- Blokada menu kontekstowego (prawy przycisk myszy) -->
+<body oncontextmenu="return false;">
+    <h1>SAPER</h1>
+
+    <!-- Główny panel gry -->
+    <div class="panel-gry">
+        <!-- Wybór poziomu trudności -->
+        <div class="wybor-poziomu">
+            <span>Poziom trudności:</span>
+            <button data-poziom="latwy" class="przycisk-poziomu">🟢 Łatwy</button>
+            <button data-poziom="sredni" class="przycisk-poziomu aktywny">🟡 Średni</button>
+            <button data-poziom="trudny" class="przycisk-poziomu">🔴 Trudny</button>
+        </div>
+
+        <!-- Ukryty select do przechowywania wybranego poziomu -->
+        <select id="poziom">
+            <option value="latwy">Łatwy (10x10, 20 min)</option>
+            <option value="sredni" selected>Średni (15x15, 30 min)</option>
+            <option value="trudny">Trudny (20x20, 60 min)</option>
+        </select>
+
+        <!-- Statystyki gry -->
+        <div class="statystyki">
+            <div class="statystyka">💣 <span id="liczba-min">0</span></div>
+            <div class="statystyka">🚩 <span id="liczba-flag">0</span>/<span id="limit-flag">0</span></div>
+            <div class="statystyka">⏱️ <span id="czas">0</span>s <span id="limit-czasu"></span></div>
+        </div>
+
+        <!-- Opcje dodatkowe -->
+        <div class="opcje">
+            <label class="checkbox-opcja">
+                <input type="checkbox" id="tryb-ciemny"> Tryb ciemny
+            </label>
+            <label class="checkbox-opcja">
+                <input type="checkbox" id="tryb-na-czas"> Tryb na czas
+            </label>
+        </div>
+    </div>
+
+    <!-- Plansza gry -->
+    <div class="plansza" id="plansza"></div>
+
+    <!-- Przyciski sterujące -->
+    <div class="przyciski">
+        <button id="nowa-gra">🔄 Nowa gra</button>
+    </div>
+
+    <!-- Modal z wynikiem gry -->
+    <div class="modal" id="modal-wynik">
+        <div class="modal-content">
+            <span class="emoji-wynik" id="emoji-wynik"></span>
+            <h2 id="tytul-wynik"></h2>
+            <p id="tresc-wynik"></p>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-primary" id="nowa-gra-modal">Nowa gra</button>
+                <button class="modal-btn modal-btn-secondary" id="zamknij-modal">Zamknij</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Ustawienia gry dla różnych poziomów trudności
+        const ustawienia = {
+            latwy: { rozmiar: 10, miny: 20, limitCzasu: 180 },    // Łatwy poziom
+            sredni: { rozmiar: 15, miny: 30, limitCzasu: 300 },   // Średni poziom
+            trudny: { rozmiar: 20, miny: 60, limitCzasu: 480 }     // Trudny poziom
+        };
+
+        // Zmienne do przechowywania stanu gry
+        let rozmiarPlanszy = 15;      // Rozmiar planszy (15x15)
+        let liczbaMin = 30;           // Liczba min na planszy
+        let limitFlag = 60;           // Maksymalna liczba flag
+        let plansza = [];             // Tablica reprezentująca planszę
+        let odkrytePola = 0;          // Liczba odkrytych pól
+        let koniecGry = false;        // Czy gra się skończyła
+        let liczbaFlag = 0;           // Liczba postawionych flag
+        let czas = 0;                 // Czas gry w sekundach
+        let timer;                    // Timer do liczenia czasu
+        let pierwszeKlikniecie = true;// Czy to pierwsze kliknięcie w grze
+        let trybNaCzas = false;       // Czy włączony jest tryb na czas
+        let limitCzasu = 300;         // Limit czasu dla trybu na czas
+
+        // Pobieramy elementy z HTML
+        const elementPlanszy = document.getElementById('plansza');
+        const elementLiczbaMin = document.getElementById('liczba-min');
+        const elementLiczbaFlag = document.getElementById('liczba-flag');
+        const elementLimitFlag = document.getElementById('limit-flag');
+        const elementCzas = document.getElementById('czas');
+        const elementLimitCzasu = document.getElementById('limit-czasu');
+        const elementNowaGra = document.getElementById('nowa-gra');
+        const elementNowaGraModal = document.getElementById('nowa-gra-modal');
+        const elementPoziom = document.getElementById('poziom');
+        const przełącznikTrybu = document.getElementById('tryb-ciemny');
+        const przełącznikTrybuCzasu = document.getElementById('tryb-na-czas');
+        const modalWynik = document.getElementById('modal-wynik');
+        const emojiWynik = document.getElementById('emoji-wynik');
+        const tytulWynik = document.getElementById('tytul-wynik');
+        const trescWynik = document.getElementById('tresc-wynik');
+        const zamknijModal = document.getElementById('zamknij-modal');
+
+        // Ustawiamy obsługę przycisków poziomu trudności
+        const przyciskiPoziomu = document.querySelectorAll('.przycisk-poziomu');
+        przyciskiPoziomu.forEach(przycisk => {
+            przycisk.addEventListener('click', () => {
+                // Usuwamy klasę aktywną ze wszystkich przycisków
+                przyciskiPoziomu.forEach(p => p.classList.remove('aktywny'));
+                // Dodajemy klasę aktywną do klikniętego przycisku
+                przycisk.classList.add('aktywny');
+                // Pobieramy wybrany poziom
+                const wybrany = przycisk.dataset.poziom;
+                // Ustawiamy wartość ukrytego selecta
+                elementPoziom.value = wybrany;
+                // Rozpoczynamy nową grę
+                rozpocznijGre();
+            });
+        });
+
+        // Obsługa przycisku nowej gry
+        elementNowaGra.addEventListener('click', rozpocznijGre);
+        
+        // Obsługa przycisku nowej gry w modalu
+        elementNowaGraModal.addEventListener('click', () => {
+            modalWynik.style.display = 'none'; // Chowamy modal
+            rozpocznijGre();                  // Nowa gra
+        });
+        
+        // Obsługa przycisku zamknięcia modala
+        zamknijModal.addEventListener('click', () => {
+            modalWynik.style.display = 'none'; // Chowamy modal
+        });
+        
+        // Obsługa przełącznika trybu ciemnego
+        przełącznikTrybu.addEventListener('change', () => {
+            // Włączamy/wyłączamy ciemny tryb
+            document.body.classList.toggle('dark-mode', przełącznikTrybu.checked);
+        });
+        
+        // Obsługa przełącznika trybu na czas
+        przełącznikTrybuCzasu.addEventListener('change', () => {
+            trybNaCzas = przełącznikTrybuCzasu.checked; // Ustawiamy flagę
+            rozpocznijGre();                           // Nowa gra
+        });
+
+        // Rozpoczynamy pierwszą grę po załadowaniu strony
+        rozpocznijGre();
+
+        /**
+         * Funkcja rozpoczynająca nową grę
+         */
+        function rozpocznijGre() {
+            // Zatrzymujemy timer jeśli działa
+            clearInterval(timer);
+            
+            // Resetujemy czas
+            czas = 0;
+            elementCzas.textContent = czas;
+            elementLimitCzasu.textContent = '';
+            elementCzas.className = '';
+            elementLimitCzasu.className = '';
+
+            // Pobieramy ustawienia dla wybranego poziomu
+            const poziom = elementPoziom.value;
+            rozmiarPlanszy = ustawienia[poziom].rozmiar;
+            liczbaMin = ustawienia[poziom].miny;
+            limitFlag = liczbaMin * 2; // Limit flag to 2x liczba min
+            limitCzasu = ustawienia[poziom].limitCzasu;
+
+            // Resetujemy stan gry
+            plansza = [];
+            odkrytePola = 0;
+            koniecGry = false;
+            liczbaFlag = 0;
+            pierwszeKlikniecie = true;
+
+            // Czyścimy planszę
+            elementPlanszy.innerHTML = '';
+            elementPlanszy.style.gridTemplateColumns = `repeat(${rozmiarPlanszy}, 30px)`;
+
+            // Aktualizujemy statystyki
+            elementLiczbaMin.textContent = liczbaMin;
+            elementLiczbaFlag.textContent = liczbaFlag;
+            elementLimitFlag.textContent = limitFlag;
+
+            // Tworzymy planszę jako tablicę dwuwymiarową
+            for (let y = 0; y < rozmiarPlanszy; y++) {
+                plansza[y] = [];
+                for (let x = 0; x < rozmiarPlanszy; x++) {
+                    // Inicjalizujemy każde pole
+                    plansza[y][x] = {
+                        czyMina: false,     // Czy jest mina
+                        czyOdkryte: false,  // Czy odkryte
+                        czyFlaga: false,    // Czy flaga
+                        minyObok: 0         // Liczba min obok
+                    };
+
+                    // Tworzymy element div dla pola
+                    const poleDiv = document.createElement('div');
+                    poleDiv.className = 'pole';
+                    poleDiv.dataset.wiersz = y;
+                    poleDiv.dataset.kolumna = x;
+
+                    // Dodajemy obsługę kliknięcia lewym przyciskiem
+                    poleDiv.addEventListener('click', () => klikPole(x, y));
+                    
+                    // Dodajemy obsługę prawego przycisku (flaga)
+                    poleDiv.addEventListener('contextmenu', (e) => {
+                        e.preventDefault(); // Blokujemy menu kontekstowe
+                        prawyKlik(x, y);    // Wywołujemy funkcję
+                    });
+
+                    // Dodajemy pole do planszy
+                    elementPlanszy.appendChild(poleDiv);
+                }
+            }
+        }
+
+        /**
+         * Rozmieszcza miny na planszy, omijając obszar wokół pierwszego kliknięcia
+         * @param {number} pierwszeX - Kolumna pierwszego kliknięcia
+         * @param {number} pierwszeY - Wiersz pierwszego kliknięcia
+         */
+        function rozmiescMiny(pierwszeX, pierwszeY) {
+            // Określamy bezpieczną strefę wokół pierwszego kliknięcia
+            const bezpiecznaStrefa = pobierzBezpiecznaStrefe(pierwszeX, pierwszeY);
+            let rozmieszczoneMiny = 0;
+
+            // Rozmieszczamy miny losowo
+            while (rozmieszczoneMiny < liczbaMin) {
+                // Losowe współrzędne
+                const x = Math.floor(Math.random() * rozmiarPlanszy);
+                const y = Math.floor(Math.random() * rozmiarPlanszy);
+
+                // Sprawdzamy czy można postawić minę
+                if (!plansza[y][x].czyMina && !bezpiecznaStrefa.has(`${x},${y}`)) {
+                    plansza[y][x].czyMina = true;
+                    rozmieszczoneMiny++;
+                }
+            }
+
+            // Liczymy miny obok każdego pola
+            policzMinyObok();
+        }
+
+        /**
+         * Zwraca bezpieczną strefę wokół danego pola (bez min)
+         * @param {number} x - Kolumna środkowego pola
+         * @param {number} y - Wiersz środkowego pola
+         * @returns {Set} Zbiór współrzędnych pól w strefie
+         */
+        function pobierzBezpiecznaStrefe(x, y) {
+            const strefa = new Set();
+            // Wszystkie kierunki sąsiedztwa (8 kierunków + środek)
+            const kierunki = [
+                [-1,-1], [-1,0], [-1,1],
+                [0,-1],  [0,0],  [0,1],
+                [1,-1],  [1,0],  [1,1]
+            ];
+
+            // Dodajemy wszystkie pola w sąsiedztwie do strefy
+            for (const [dx, dy] of kierunki) {
+                const nx = x + dx;
+                const ny = y + dy;
+                // Sprawdzamy czy współrzędne są na planszy
+                if (nx >= 0 && nx < rozmiarPlanszy && ny >= 0 && ny < rozmiarPlanszy) {
+                    strefa.add(`${nx},${ny}`);
+                }
+            }
+
+            return strefa;
+        }
+
+        /**
+         * Liczy dla każdego pola liczbę min w sąsiedztwie
+         */
+        function policzMinyObok() {
+            // Wszystkie kierunki sąsiedztwa (8 kierunków)
+            const kierunki = [
+                [-1,-1], [-1,0], [-1,1],
+                [0,-1],          [0,1],
+                [1,-1],  [1,0],  [1,1]
+            ];
+
+            // Przechodzimy przez wszystkie pola planszy
+            for (let y = 0; y < rozmiarPlanszy; y++) {
+                for (let x = 0; x < rozmiarPlanszy; x++) {
+                    // Pomijamy pola z minami
+                    if (plansza[y][x].czyMina) continue;
+
+                    let licznik = 0;
+                    // Sprawdzamy wszystkich sąsiadów
+                    for (const [dx, dy] of kierunki) {
+                        const nx = x + dx;
+                        const ny = y + dy;
+                        // Sprawdzamy czy sąsiad jest na planszy i ma minę
+                        if (nx >= 0 && nx < rozmiarPlanszy && ny >= 0 && ny < rozmiarPlanszy && plansza[ny][nx].czyMina) {
+                            licznik++;
+                        }
+                    }
+                    // Zapisujemy liczbę min obok
+                    plansza[y][x].minyObok = licznik;
+                }
+            }
+        }
+
+        /**
+         * Obsługuje kliknięcie lewym przyciskiem myszy na pole
+         * @param {number} x - Kolumna pola
+         * @param {number} y - Wiersz pola
+         */
+        function klikPole(x, y) {
+            // Jeśli gra się skończyła lub pole jest odkryte/flaga - kończymy
+            if (koniecGry || plansza[y][x].czyOdkryte || plansza[y][x].czyFlaga) return;
+
+            // Jeśli to pierwsze kliknięcie w grze
+            if (pierwszeKlikniecie) {
+                rozmiescMiny(x, y); // Rozmieszczamy miny
+                pierwszeKlikniecie = false; // To już nie pierwsze kliknięcie
+                
+                // Uruchamiamy timer
+                timer = setInterval(() => {
+                    czas++;
+                    elementCzas.textContent = czas;
+                    
+                    // Obsługa trybu na czas
+                    if (trybNaCzas) {
+                        const pozostalyCzas = limitCzasu - czas;
+                        elementLimitCzasu.textContent = `(limit: ${pozostalyCzas}s)`;
+                        
+                        // Zmiana koloru w zależności od czasu
+                        if (pozostalyCzas <= 10) {
+                            elementCzas.className = 'czas-krytyczny';
+                            elementLimitCzasu.className = 'czas-krytyczny';
+                        } else if (pozostalyCzas <= 30) {
+                            elementCzas.className = 'czas-ostrzeganie';
+                            elementLimitCzasu.className = 'czas-ostrzeganie';
+                        } else {
+                            elementCzas.className = '';
+                            elementLimitCzasu.className = '';
+                        }
+                        
+                        // Sprawdzamy czy czas się skończył
+                        if (czas >= limitCzasu) {
+                            koniecGry = true;
+                            clearInterval(timer);
+                            pokazWszystkieMiny();
+                            pokazWynik(false, 'Czas minął! Nie udało się odkryć wszystkich pól w wyznaczonym czasie.');
+                        }
+                    }
+                }, 1000);
+            }
+
+            // Odkrywamy pole
+            odkryjPole(x, y);
+
+            // Sprawdzamy warunki końca gry
+            if (plansza[y][x].czyMina) {
+                // Kliknięto na minę - przegrana
+                koniecGry = true;
+                clearInterval(timer);
+                pokazWszystkieMiny();
+                pokazWynik(false, 'Niestety, trafiłeś na minę!');
+            } else if (odkrytePola === rozmiarPlanszy * rozmiarPlanszy - liczbaMin) {
+                // Odkryto wszystkie pola bez min - wygrana
+                koniecGry = true;
+                clearInterval(timer);
+                pokazWynik(true, `Gratulacje! Wygrałeś w ${czas} sekund!`);
+            }
+
+            // Odświeżamy planszę
+            rysujPlansze();
+        }
+
+        /**
+         * Obsługuje prawy przycisk myszy (flaga)
+         * @param {number} x - Kolumna pola
+         * @param {number} y - Wiersz pola
+         * @returns {boolean} Zawsze false (blokada menu kontekstowego)
+         */
+        function prawyKlik(x, y) {
+            // Jeśli gra się skończyła lub pole jest odkryte - kończymy
+            if (koniecGry || plansza[y][x].czyOdkryte) return false;
+
+            // Jeśli to pierwsze kliknięcie w grze
+            if (pierwszeKlikniecie) {
+                pierwszeKlikniecie = false; // To już nie pierwsze kliknięcie
+                
+                // Uruchamiamy timer (jak w funkcji klikPole)
+                timer = setInterval(() => {
+                    czas++;
+                    elementCzas.textContent = czas;
+                    
+                    // Obsługa trybu na czas
+                    if (trybNaCzas) {
+                        const pozostalyCzas = limitCzasu - czas;
+                        elementLimitCzasu.textContent = `(limit: ${pozostalyCzas}s)`;
+                        
+                        if (pozostalyCzas <= 10) {
+                            elementCzas.className = 'czas-krytyczny';
+                            elementLimitCzasu.className = 'czas-krytyczny';
+                        } else if (pozostalyCzas <= 30) {
+                            elementCzas.className = 'czas-ostrzeganie';
+                            elementLimitCzasu.className = 'czas-ostrzeganie';
+                        } else {
+                            elementCzas.className = '';
+                            elementLimitCzasu.className = '';
+                        }
+                        
+                        if (czas >= limitCzasu) {
+                            koniecGry = true;
+                            clearInterval(timer);
+                            pokazWszystkieMiny();
+                            pokazWynik(false, 'Czas minął! Nie udało się odkryć wszystkich pól w wyznaczonym czasie.');
+                        }
+                    }
+                }, 1000);
+            }
+
+            // Sprawdzamy czy można postawić flagę (nie przekroczono limitu)
+            if (!plansza[y][x].czyFlaga && liczbaFlag >= limitFlag) {
+                pokazWynik(false, 'Wykorzystałeś wszystkie dostępne flagi!');
+                return false;
+            }
+
+            // Dodajemy/usuwa flagę
+            plansza[y][x].czyFlaga = !plansza[y][x].czyFlaga;
+            // Aktualizujemy licznik flag
+            liczbaFlag += plansza[y][x].czyFlaga ? 1 : -1;
+            elementLiczbaFlag.textContent = liczbaFlag;
+
+            // Jeśli zostało mało flag - zmieniamy kolor
+            if (limitFlag - liczbaFlag <= 3) {
+                elementLimitFlag.classList.add('limit-flag');
+            } else {
+                elementLimitFlag.classList.remove('limit-flag');
+            }
+
+            // Sprawdzamy czy wykorzystano wszystkie flagi
+            if (liczbaFlag >= limitFlag) {
+                koniecGry = true;
+                clearInterval(timer);
+                pokazWszystkieMiny();
+                pokazWynik(false, 'Wykorzystałeś wszystkie dostępne flagi!');
+            }
+
+            // Odświeżamy planszę
+            rysujPlansze();
+            return false; // Blokujemy menu kontekstowe
+        }
+
+        /**
+         * Odkrywa pole na planszy (rekurencyjnie odkrywa puste obszary)
+         * @param {number} x - Kolumna pola
+         * @param {number} y - Wiersz pola
+         */
+        function odkryjPole(x, y) {
+            // Sprawdzamy czy współrzędne są poprawne i pole nie jest odkryte/flaga
+            if (x < 0 || x >= rozmiarPlanszy || y < 0 || y >= rozmiarPlanszy || 
+                plansza[y][x].czyOdkryte || plansza[y][x].czyFlaga) return;
+
+            // Oznaczamy pole jako odkryte
+            plansza[y][x].czyOdkryte = true;
+            odkrytePola++;
+
+            // Jeśli pole jest puste (0 min obok) - odkrywamy sąsiadów
+            if (plansza[y][x].minyObok === 0 && !plansza[y][x].czyMina) {
+                const kierunki = [[-1,0], [1,0], [0,-1], [0,1]]; // Tylko 4 kierunki
+                for (const [dx, dy] of kierunki) {
+                    odkryjPole(x + dx, y + dy); // Rekurencyjne odkrywanie
+                }
+            }
+        }
+
+        /**
+         * Pokazuje wszystkie miny na planszy (po przegranej)
+         */
+        function pokazWszystkieMiny() {
+            // Przechodzimy przez wszystkie pola planszy
+            for (let y = 0; y < rozmiarPlanszy; y++) {
+                for (let x = 0; x < rozmiarPlanszy; x++) {
+                    // Jeśli pole ma minę - odkrywamy je
+                    if (plansza[y][x].czyMina) {
+                        plansza[y][x].czyOdkryte = true;
+                    }
+                }
+            }
+            // Odświeżamy planszę
+            rysujPlansze();
+        }
+
+        /**
+         * Rysuje aktualny stan planszy w HTML
+         */
+        function rysujPlansze() {
+            const pola = document.querySelectorAll('.pole');
+            // Przechodzimy przez wszystkie pola planszy
+            for (let y = 0; y < rozmiarPlanszy; y++) {
+                for (let x = 0; x < rozmiarPlanszy; x++) {
+                    const pole = plansza[y][x];
+                    const el = pola[y * rozmiarPlanszy + x];
+
+                    // Resetujemy klasy pola
+                    el.className = 'pole';
+
+                    if (pole.czyOdkryte) {
+                        // Pole odkryte - pokazujemy zawartość
+                        el.classList.add('odkryte');
+                        if (pole.czyMina) {
+                            // Mina
+                            el.textContent = '💣';
+                            el.classList.add('mina');
+                        } else if (pole.minyObok > 0) {
+                            // Liczba min obok
+                            el.textContent = pole.minyObok;
+                            el.classList.add(`liczba-${pole.minyObok}`);
+                        } else {
+                            // Puste pole
+                            el.textContent = '';
+                        }
+                    } else if (pole.czyFlaga) {
+                        // Flaga
+                        el.classList.add('flaga');
+                        el.textContent = '🚩';
+                    } else {
+                        // Nieodkryte pole
+                        el.textContent = '';
+                    }
+                }
+            }
+        }
+
+        /**
+         * Pokazuje modal z wynikiem gry
+         * @param {boolean} wygrana - Czy gracz wygrał
+         * @param {string} wiadomosc - Wiadomość do wyświetlenia
+         */
+        function pokazWynik(wygrana, wiadomosc) {
+            if (wygrana) {
+                // Komunikat o wygranej
+                emojiWynik.textContent = '🎉';
+                emojiWynik.classList.add('win');
+                tytulWynik.textContent = 'Gratulacje!';
+                if (trybNaCzas) {
+                    wiadomosc += `\n(z limitem ${limitCzasu}s)`;
+                }
+            } else {
+                // Komunikat o przegranej
+                emojiWynik.textContent = '💥';
+                emojiWynik.classList.add('lose');
+                tytulWynik.textContent = 'Przegrana!';
+            }
+            // Ustawiamy treść i pokazujemy modal
+            trescWynik.textContent = wiadomosc;
+            modalWynik.style.display = 'flex';
+        }
+    </script>
+    <div class="programisci">
+    <br>
+    <p>Programiści:</p>
+    <p>Patryk Reszka</p>
+    <p>Michał Parszewski</p>
+    <p>Jakub Starzycki</p>
+    <p>Adrian Sojka</p>
+    <p>Maja Job</p>
+    <p>Dawid Szałański</p>
+    </div>
+</body>
+</html>
